@@ -1,0 +1,30 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "EnMovi-Data-Transformer-Development"
+		},
+		"Data_Factory_Azure_Functions_functionKey": {
+			"value": ""
+		},
+		"LinkOiQSQLData_connectionString": {
+			"value": ""
+		},
+		"OrthologIQ to data science noPHI_functionKey": {
+			"value": ""
+		},
+		"Data_Factory_Azure_Functions_properties_typeProperties_functionAppUrl": {
+			"value": "https://dev-data-factory-functions.azurewebsites.net"
+		},
+		"OrthologIQ to data science noPHI_properties_typeProperties_functionAppUrl": {
+			"value": "https://dev-orthologiq-to-nophi-data-science.azurewebsites.net"
+		},
+		"containerUri": {
+			"value": ""
+		},
+		"containerSasToken": {
+			"value": ""
+		}
+	}
+}
