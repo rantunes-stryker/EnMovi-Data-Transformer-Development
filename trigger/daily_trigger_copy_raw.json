@@ -1,0 +1,29 @@
+{
+	"name": "daily_trigger_copy_raw",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Started",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "Copy list of patients from pipeline to lake",
+					"type": "PipelineReference"
+				}
+			}
+		],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Day",
+				"interval": 1,
+				"startTime": "2021-05-18T11:22:00Z",
+				"timeZone": "UTC",
+				"schedule": {
+					"hours": [
+						5
+					]
+				}
+			}
+		}
+	}
+}

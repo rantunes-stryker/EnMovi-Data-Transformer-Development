@@ -1,0 +1,9 @@
+{
+	"name": "EnMovi-Data-Transformer-Development",
+	"location": "uksouth",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "3f14f55b-0776-4fb5-8965-16a62056f2ca",
+		"tenantId": "98f9ec49-9982-4cf6-9164-ad08c76126c0"
+	}
+}

@@ -1,0 +1,17 @@
+{
+	"name": "hourly_trigger",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Stopped",
+		"pipelines": [],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Hour",
+				"interval": 1,
+				"startTime": "2021-05-12T13:00:00Z",
+				"timeZone": "UTC"
+			}
+		}
+	}
+}
