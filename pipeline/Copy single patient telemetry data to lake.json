@@ -1,0 +1,101 @@
+{
+	"name": "Copy single patient telemetry data to lake",
+	"properties": {
+		"activities": [
+			{
+				"name": "Wait until finish",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Wait a few seconds",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"url": {
+						"value": "@activity('Pipeline data to lake').output.statusQueryGetUri",
+						"type": "Expression"
+					},
+					"method": "GET"
+				}
+			},
+			{
+				"name": "Set target PatientId",
+				"description": "",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "PatientId",
+					"value": "{\"PatientId\": \"763cfad1-a080-429b-1373-08d904e5b14a\"}"
+				}
+			},
+			{
+				"name": "Wait a few seconds",
+				"type": "Wait",
+				"dependsOn": [
+					{
+						"activity": "Pipeline data to lake",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"waitTimeInSeconds": 5
+				}
+			},
+			{
+				"name": "Pipeline data to lake",
+				"type": "AzureFunctionActivity",
+				"dependsOn": [
+					{
+						"activity": "Set target PatientId",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 10,
+					"retryIntervalInSeconds": 60,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"functionName": "orchestrators/CopyPatientTelemetryPipelineToDataLake_orchestrator",
+					"method": "POST",
+					"body": {
+						"value": "@variables('PatientId')",
+						"type": "Expression"
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "Data_Factory_Azure_Functions",
+					"type": "LinkedServiceReference"
+				}
+			}
+		],
+		"variables": {
+			"PatientId": {
+				"type": "String"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2021-05-18T17:24:26Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}
