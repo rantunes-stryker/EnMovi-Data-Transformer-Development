@@ -23,7 +23,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"url": {
-						"value": "@activity('Pipeline data to lake').output.statusQueryGetUri",
+						"value": "@activity('Telemetry data to lake').output.statusQueryGetUri",
 						"type": "Expression"
 					},
 					"method": "GET"
@@ -45,7 +45,7 @@
 				"type": "Wait",
 				"dependsOn": [
 					{
-						"activity": "Pipeline data to lake",
+						"activity": "Telemetry data to lake",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -57,7 +57,7 @@
 				}
 			},
 			{
-				"name": "Pipeline data to lake",
+				"name": "Telemetry data to lake",
 				"type": "AzureFunctionActivity",
 				"dependsOn": [
 					{
