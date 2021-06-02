@@ -1182,6 +1182,9 @@
 						"startTime": "2021-05-18T11:22:00Z",
 						"timeZone": "UTC",
 						"schedule": {
+							"minutes": [
+								0
+							],
 							"hours": [
 								5
 							]
@@ -1250,6 +1253,44 @@
 				}
 			},
 			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/daily_trigger_telemetry_copy')]",
+			"type": "Microsoft.DataFactory/factories/triggers",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"runtimeState": "Started",
+				"pipelines": [
+					{
+						"pipelineReference": {
+							"referenceName": "Copy list of patients from telemetry to lake",
+							"type": "PipelineReference"
+						},
+						"parameters": {}
+					}
+				],
+				"type": "ScheduleTrigger",
+				"typeProperties": {
+					"recurrence": {
+						"frequency": "Day",
+						"interval": 1,
+						"startTime": "2021-06-02T08:00:00Z",
+						"timeZone": "UTC",
+						"schedule": {
+							"minutes": [
+								0
+							],
+							"hours": [
+								7
+							]
+						}
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/Copy list of patients from telemetry to lake')]"
+			]
 		}
 	]
 }
