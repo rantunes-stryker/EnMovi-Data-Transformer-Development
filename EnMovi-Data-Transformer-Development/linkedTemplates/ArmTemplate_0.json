@@ -1126,6 +1126,7 @@
 						}
 					}
 				],
+				"concurrency": 1,
 				"variables": {
 					"X": {
 						"type": "Array"
