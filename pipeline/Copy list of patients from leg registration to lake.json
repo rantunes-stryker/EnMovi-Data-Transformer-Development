@@ -1,5 +1,5 @@
 {
-	"name": "Copy list of patients from gait to lake",
+	"name": "Copy list of patients from leg registration to lake",
 	"properties": {
 		"activities": [
 			{
@@ -61,7 +61,7 @@
 							},
 							"userProperties": [],
 							"typeProperties": {
-								"functionName": "orchestrators/CopyPatientGaitPipelineToDataLake_orchestrator",
+								"functionName": "orchestrators/CopyPatientLegRegtoDataLake_orchestrator",
 								"method": "POST",
 								"body": {
 									"value": "@item()",
@@ -126,7 +126,7 @@
 			}
 		},
 		"annotations": [],
-		"lastPublishTime": "2021-05-18T17:25:21Z"
+		"lastPublishTime": "2021-05-18T16:24:25Z"
 	},
 	"type": "Microsoft.DataFactory/factories/pipelines"
 }

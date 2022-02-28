@@ -1,5 +1,5 @@
 {
-	"name": "Copy single patient telemetry data to lake",
+	"name": "Copy single patient leg registration data to lake_copy1",
 	"properties": {
 		"activities": [
 			{
@@ -23,7 +23,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"url": {
-						"value": "@activity('Telemetry data to lake').output.statusQueryGetUri",
+						"value": "@activity('Leg reg data to lake').output.statusQueryGetUri\n",
 						"type": "Expression"
 					},
 					"method": "GET"
@@ -45,7 +45,7 @@
 				"type": "Wait",
 				"dependsOn": [
 					{
-						"activity": "Telemetry data to lake",
+						"activity": "Leg reg data to lake",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -57,7 +57,7 @@
 				}
 			},
 			{
-				"name": "Telemetry data to lake",
+				"name": "Leg reg data to lake",
 				"type": "AzureFunctionActivity",
 				"dependsOn": [
 					{
@@ -76,7 +76,7 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"functionName": "orchestrators/CopyPatientTelemetryPipelineToDataLake_orchestrator",
+					"functionName": "orchestrators/CopyPatientLegRegtoDataLake_orchestrator",
 					"method": "POST",
 					"body": {
 						"value": "@variables('PatientId')",
