@@ -97,13 +97,7 @@
 									"value": "@activity('Patient data to DS lake').output.statusQueryGetUri",
 									"type": "Expression"
 								},
-								"method": "GET",
-								"linkedServices": [
-									{
-										"referenceName": "OrthologIQ to data science noPHI",
-										"type": "LinkedServiceReference"
-									}
-								]
+								"method": "GET"
 							}
 						},
 						{
