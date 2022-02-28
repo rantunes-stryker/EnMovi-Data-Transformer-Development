@@ -23,7 +23,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"url": {
-						"value": "@activity('Telemetry data to lake').output.statusQueryGetUri",
+						"value": "@activity('Leg reg data to lake').output.statusQueryGetUri\n",
 						"type": "Expression"
 					},
 					"method": "GET"
@@ -76,7 +76,7 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"functionName": "orchestrators/CopyPatientLegRegPipelineToDataLake_orchestrator",
+					"functionName": "orchestrators/CopyPatientLegRegtoDataLake_orchestrator",
 					"method": "POST",
 					"body": {
 						"value": "@variables('PatientId')",
