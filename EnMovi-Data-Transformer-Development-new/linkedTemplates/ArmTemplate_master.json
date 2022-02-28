@@ -1,0 +1,63 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "EnMovi-Data-Transformer-Development-new"
+		},
+		"Data_Factory_Azure_Functions_functionKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'functionKey' of 'Data_Factory_Azure_Functions'"
+		},
+		"LinkOiQSQLData_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'LinkOiQSQLData'"
+		},
+		"Data_Factory_Azure_Functions_properties_typeProperties_functionAppUrl": {
+			"type": "string",
+			"defaultValue": "https://dev-data-factory-functions.azurewebsites.net"
+		},
+		"containerUri": {
+			"type": "string",
+			"metadata": "URI to storage account containing linked ARM templates"
+		},
+		"containerSasToken": {
+			"type": "string",
+			"metadata": "Sas token to storage account containing linked ARM templates"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "EnMovi-Data-Transformer-Development-new_ArmTemplate_0",
+			"type": "Microsoft.Resources/deployments",
+			"apiVersion": "2018-02-01",
+			"properties": {
+				"mode": "incremental",
+				"templateLink": {
+					"uri": "[concat(parameters('containerUri'), '/ArmTemplate_0.json', parameters('containerSasToken'))]",
+					"contentVersion": "1.0.0.0"
+				},
+				"parameters": {
+					"factoryName": {
+						"value": "[parameters('factoryName')]"
+					},
+					"Data_Factory_Azure_Functions_functionKey": {
+						"value": "[parameters('Data_Factory_Azure_Functions_functionKey')]"
+					},
+					"LinkOiQSQLData_connectionString": {
+						"value": "[parameters('LinkOiQSQLData_connectionString')]"
+					},
+					"Data_Factory_Azure_Functions_properties_typeProperties_functionAppUrl": {
+						"value": "[parameters('Data_Factory_Azure_Functions_properties_typeProperties_functionAppUrl')]"
+					}
+				}
+			},
+			"dependsOn": []
+		}
+	]
+}

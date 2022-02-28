@@ -1,0 +1,1277 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "EnMovi-Data-Transformer-Development-new"
+		},
+		"Data_Factory_Azure_Functions_functionKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'functionKey' of 'Data_Factory_Azure_Functions'"
+		},
+		"LinkOiQSQLData_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'LinkOiQSQLData'"
+		},
+		"Data_Factory_Azure_Functions_properties_typeProperties_functionAppUrl": {
+			"type": "string",
+			"defaultValue": "https://dev-data-factory-functions.azurewebsites.net"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/Copy list of patients from OIQ to lake')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Get patient list",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": "SELECT PatientId FROM dbo.PatientsIdForDataLake;",
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "PatientsIdForDataLake",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "Copy to DS lake",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "Get patient list",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('Get patient list').output.value",
+								"type": "Expression"
+							},
+							"batchCount": 50,
+							"activities": [
+								{
+									"name": "Patient data to DS lake",
+									"description": "Copy patient OIQ data to data science lake",
+									"type": "AzureFunctionActivity",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 5,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"functionName": "orchestrators/copyOIQNonPHIToDataScience-orchestrator",
+										"method": "POST",
+										"headers": {},
+										"body": {
+											"value": "@item()",
+											"type": "Expression"
+										}
+									},
+									"linkedServiceName": {
+										"referenceName": "Data_Factory_Azure_Functions",
+										"type": "LinkedServiceReference"
+									}
+								},
+								{
+									"name": "Wait until finish",
+									"type": "WebActivity",
+									"dependsOn": [
+										{
+											"activity": "Wait a few seconds",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"url": {
+											"value": "@activity('Patient data to DS lake').output.statusQueryGetUri",
+											"type": "Expression"
+										},
+										"method": "GET",
+										"headers": {}
+									}
+								},
+								{
+									"name": "Wait a few seconds",
+									"type": "Wait",
+									"dependsOn": [
+										{
+											"activity": "Patient data to DS lake",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"waitTimeInSeconds": 5
+									}
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"variables": {
+					"X": {
+						"type": "Array"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2021-05-18T16:17:38Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/PatientsIdForDataLake')]",
+				"[concat(variables('factoryId'), '/linkedServices/Data_Factory_Azure_Functions')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Copy list of patients from gait to lake')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Get patient list",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": "SELECT PatientId FROM dbo.PatientsIdForDataLake;",
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "PatientsIdForDataLake",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "Copy to DS lake",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "Get patient list",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('Get patient list').output.value",
+								"type": "Expression"
+							},
+							"batchCount": 50,
+							"activities": [
+								{
+									"name": "Patient data to DS lake",
+									"description": "Copy patient OIQ data to data science lake",
+									"type": "AzureFunctionActivity",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 5,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"functionName": "orchestrators/CopyPatientGaitPipelineToDataLake_orchestrator",
+										"method": "POST",
+										"headers": {},
+										"body": {
+											"value": "@item()",
+											"type": "Expression"
+										}
+									},
+									"linkedServiceName": {
+										"referenceName": "Data_Factory_Azure_Functions",
+										"type": "LinkedServiceReference"
+									}
+								},
+								{
+									"name": "Wait until finish",
+									"type": "WebActivity",
+									"dependsOn": [
+										{
+											"activity": "Wait a few seconds",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"url": {
+											"value": "@activity('Patient data to DS lake').output.statusQueryGetUri",
+											"type": "Expression"
+										},
+										"method": "GET",
+										"headers": {}
+									}
+								},
+								{
+									"name": "Wait a few seconds",
+									"type": "Wait",
+									"dependsOn": [
+										{
+											"activity": "Patient data to DS lake",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"waitTimeInSeconds": 5
+									}
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"variables": {
+					"X": {
+						"type": "Array"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2021-05-18T17:25:21Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/PatientsIdForDataLake')]",
+				"[concat(variables('factoryId'), '/linkedServices/Data_Factory_Azure_Functions')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Copy list of patients from pipeline to lake')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Get patient list",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": "SELECT PatientId FROM dbo.PatientsIdForDataLake;",
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "PatientsIdForDataLake",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "Copy to DS lake",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "Get patient list",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('Get patient list').output.value",
+								"type": "Expression"
+							},
+							"batchCount": 50,
+							"activities": [
+								{
+									"name": "Patient data to DS lake",
+									"description": "Copy patient OIQ data to data science lake",
+									"type": "AzureFunctionActivity",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 5,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"functionName": "orchestrators/CopyPatientRawPipelineToDataLake_orchestrator",
+										"method": "POST",
+										"headers": {},
+										"body": {
+											"value": "@item()",
+											"type": "Expression"
+										}
+									},
+									"linkedServiceName": {
+										"referenceName": "Data_Factory_Azure_Functions",
+										"type": "LinkedServiceReference"
+									}
+								},
+								{
+									"name": "Wait until finish",
+									"type": "WebActivity",
+									"dependsOn": [
+										{
+											"activity": "Wait a few seconds",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"url": {
+											"value": "@activity('Patient data to DS lake').output.statusQueryGetUri",
+											"type": "Expression"
+										},
+										"method": "GET",
+										"headers": {}
+									}
+								},
+								{
+									"name": "Wait a few seconds",
+									"type": "Wait",
+									"dependsOn": [
+										{
+											"activity": "Patient data to DS lake",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"waitTimeInSeconds": 5
+									}
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"variables": {
+					"X": {
+						"type": "Array"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2021-05-18T16:24:25Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/PatientsIdForDataLake')]",
+				"[concat(variables('factoryId'), '/linkedServices/Data_Factory_Azure_Functions')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Copy list of patients from telemetry to lake')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Get patient list",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": "SELECT PatientId FROM dbo.PatientsIdForDataLake;",
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "PatientsIdForDataLake",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "Copy to DS lake",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "Get patient list",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('Get patient list').output.value",
+								"type": "Expression"
+							},
+							"isSequential": true,
+							"activities": [
+								{
+									"name": "Patient data to DS lake",
+									"description": "Copy patient OIQ data to data science lake",
+									"type": "AzureFunctionActivity",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "00:10:00",
+										"retry": 10,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"functionName": "orchestrators/CopyPatientTelemetryPipelineToDataLake_orchestrator",
+										"method": "POST",
+										"headers": {},
+										"body": {
+											"value": "@item()",
+											"type": "Expression"
+										}
+									},
+									"linkedServiceName": {
+										"referenceName": "Data_Factory_Azure_Functions",
+										"type": "LinkedServiceReference"
+									}
+								},
+								{
+									"name": "Wait until finish",
+									"type": "WebActivity",
+									"dependsOn": [
+										{
+											"activity": "Wait a few seconds",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "00:10:00",
+										"retry": 10,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"url": {
+											"value": "@activity('Patient data to DS lake').output.statusQueryGetUri",
+											"type": "Expression"
+										},
+										"method": "GET",
+										"headers": {}
+									}
+								},
+								{
+									"name": "Wait a few seconds",
+									"type": "Wait",
+									"dependsOn": [
+										{
+											"activity": "Patient data to DS lake",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"waitTimeInSeconds": 5
+									}
+								}
+							]
+						}
+					}
+				],
+				"concurrency": 1,
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"variables": {
+					"X": {
+						"type": "Array"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2021-05-18T17:25:21Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/PatientsIdForDataLake')]",
+				"[concat(variables('factoryId'), '/linkedServices/Data_Factory_Azure_Functions')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Copy single patient from OIQ to lake')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Patient OIQ data to DS lake",
+						"description": "Copy patient OIQ data to data science lake",
+						"type": "AzureFunctionActivity",
+						"dependsOn": [
+							{
+								"activity": "Set target PatientId",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"functionName": "orchestrators/copyOIQNonPHIToDataScience-orchestrator",
+							"method": "POST",
+							"headers": {},
+							"body": {
+								"value": "@variables('PatientId')",
+								"type": "Expression"
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "Data_Factory_Azure_Functions",
+							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "Wait until finish",
+						"type": "WebActivity",
+						"dependsOn": [
+							{
+								"activity": "Wait a few seconds",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"url": {
+								"value": "@activity('Patient OIQ data to DS lake').output.statusQueryGetUri",
+								"type": "Expression"
+							},
+							"method": "GET",
+							"headers": {}
+						}
+					},
+					{
+						"name": "Set target PatientId",
+						"description": "",
+						"type": "SetVariable",
+						"dependsOn": [],
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "PatientId",
+							"value": "{\"PatientId\": \"763cfad1-a080-429b-1373-08d904e5b14a\"}"
+						}
+					},
+					{
+						"name": "Wait a few seconds",
+						"type": "Wait",
+						"dependsOn": [
+							{
+								"activity": "Patient OIQ data to DS lake",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"waitTimeInSeconds": 5
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"variables": {
+					"PatientId": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2021-05-18T15:15:15Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/Data_Factory_Azure_Functions')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Copy single patient gait data to lake')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Wait until finish",
+						"type": "WebActivity",
+						"dependsOn": [
+							{
+								"activity": "Wait a few seconds",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"url": {
+								"value": "@activity('Pipeline data to lake').output.statusQueryGetUri",
+								"type": "Expression"
+							},
+							"method": "GET",
+							"headers": {}
+						}
+					},
+					{
+						"name": "Set target PatientId",
+						"description": "",
+						"type": "SetVariable",
+						"dependsOn": [],
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "PatientId",
+							"value": "{\"PatientId\": \"763cfad1-a080-429b-1373-08d904e5b14a\"}"
+						}
+					},
+					{
+						"name": "Wait a few seconds",
+						"type": "Wait",
+						"dependsOn": [
+							{
+								"activity": "Pipeline data to lake",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"waitTimeInSeconds": 5
+						}
+					},
+					{
+						"name": "Pipeline data to lake",
+						"type": "AzureFunctionActivity",
+						"dependsOn": [
+							{
+								"activity": "Set target PatientId",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 10,
+							"retryIntervalInSeconds": 60,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"functionName": "orchestrators/CopyPatientGaitPipelineToDataLake_orchestrator",
+							"method": "POST",
+							"headers": {},
+							"body": {
+								"value": "@variables('PatientId')",
+								"type": "Expression"
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "Data_Factory_Azure_Functions",
+							"type": "LinkedServiceReference"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"variables": {
+					"PatientId": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2021-05-18T17:24:26Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/Data_Factory_Azure_Functions')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Copy single patient pipeline data to lake')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Wait until finish",
+						"type": "WebActivity",
+						"dependsOn": [
+							{
+								"activity": "Wait a few seconds",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"url": {
+								"value": "@activity('Pipeline data to lake').output.statusQueryGetUri",
+								"type": "Expression"
+							},
+							"method": "GET",
+							"headers": {}
+						}
+					},
+					{
+						"name": "Set target PatientId",
+						"description": "",
+						"type": "SetVariable",
+						"dependsOn": [],
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "PatientId",
+							"value": "{\"PatientId\": \"962125eb-25e4-45e6-87c0-08d9b65045b8\"}"
+						}
+					},
+					{
+						"name": "Wait a few seconds",
+						"type": "Wait",
+						"dependsOn": [
+							{
+								"activity": "Pipeline data to lake",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"waitTimeInSeconds": 5
+						}
+					},
+					{
+						"name": "Pipeline data to lake",
+						"type": "AzureFunctionActivity",
+						"dependsOn": [
+							{
+								"activity": "Set target PatientId",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 10,
+							"retryIntervalInSeconds": 60,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"functionName": "orchestrators/CopyPatientRawPipelineToDataLake_orchestrator",
+							"method": "POST",
+							"headers": {},
+							"body": {
+								"value": "@variables('PatientId')",
+								"type": "Expression"
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "Data_Factory_Azure_Functions",
+							"type": "LinkedServiceReference"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"variables": {
+					"PatientId": {
+						"type": "String"
+					},
+					"Output": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2021-05-19T14:07:07Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/Data_Factory_Azure_Functions')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Copy single patient telemetry data to lake')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Wait until finish",
+						"type": "WebActivity",
+						"dependsOn": [
+							{
+								"activity": "Wait a few seconds",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"url": {
+								"value": "@activity('Telemetry data to lake').output.statusQueryGetUri",
+								"type": "Expression"
+							},
+							"method": "GET",
+							"headers": {}
+						}
+					},
+					{
+						"name": "Set target PatientId",
+						"description": "962125eb-25e4-45e6-87c0-08d9b65045b8",
+						"type": "SetVariable",
+						"dependsOn": [],
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "PatientId",
+							"value": "{\"PatientId\": \"763cfad1-a080-429b-1373-08d904e5b14a\"}"
+						}
+					},
+					{
+						"name": "Wait a few seconds",
+						"type": "Wait",
+						"dependsOn": [
+							{
+								"activity": "Telemetry data to lake",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"waitTimeInSeconds": 5
+						}
+					},
+					{
+						"name": "Telemetry data to lake",
+						"type": "AzureFunctionActivity",
+						"dependsOn": [
+							{
+								"activity": "Set target PatientId",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 10,
+							"retryIntervalInSeconds": 60,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"functionName": "orchestrators/CopyPatientTelemetryPipelineToDataLake_orchestrator",
+							"method": "POST",
+							"headers": {},
+							"body": {
+								"value": "@variables('PatientId')",
+								"type": "Expression"
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "Data_Factory_Azure_Functions",
+							"type": "LinkedServiceReference"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"variables": {
+					"PatientId": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2021-05-18T17:24:26Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/Data_Factory_Azure_Functions')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PatientsIdForDataLake')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LinkOiQSQLData",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "PatientsIdForDataLake"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LinkOiQSQLData')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Data_Factory_Azure_Functions')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureFunction",
+				"typeProperties": {
+					"functionAppUrl": "[parameters('Data_Factory_Azure_Functions_properties_typeProperties_functionAppUrl')]",
+					"functionKey": {
+						"type": "SecureString",
+						"value": "[parameters('Data_Factory_Azure_Functions_functionKey')]"
+					},
+					"authentication": "Anonymous"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/LinkOiQSQLData')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"connectionString": "[parameters('LinkOiQSQLData_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/daily_trigger_OIQ_Copy')]",
+			"type": "Microsoft.DataFactory/factories/triggers",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"runtimeState": "Started",
+				"pipelines": [
+					{
+						"pipelineReference": {
+							"referenceName": "Copy list of patients from OIQ to lake",
+							"type": "PipelineReference"
+						},
+						"parameters": {}
+					}
+				],
+				"type": "ScheduleTrigger",
+				"typeProperties": {
+					"recurrence": {
+						"frequency": "Day",
+						"interval": 1,
+						"startTime": "2021-05-06T13:39:00Z",
+						"timeZone": "UTC",
+						"schedule": {
+							"minutes": [
+								0
+							],
+							"hours": [
+								0
+							]
+						}
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/Copy list of patients from OIQ to lake')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/daily_trigger_copy_raw')]",
+			"type": "Microsoft.DataFactory/factories/triggers",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"runtimeState": "Started",
+				"pipelines": [
+					{
+						"pipelineReference": {
+							"referenceName": "Copy list of patients from pipeline to lake",
+							"type": "PipelineReference"
+						},
+						"parameters": {}
+					}
+				],
+				"type": "ScheduleTrigger",
+				"typeProperties": {
+					"recurrence": {
+						"frequency": "Day",
+						"interval": 1,
+						"startTime": "2021-05-18T11:22:00Z",
+						"timeZone": "UTC",
+						"schedule": {
+							"minutes": [
+								0
+							],
+							"hours": [
+								5
+							]
+						}
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/Copy list of patients from pipeline to lake')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/daily_trigger_gait_copy')]",
+			"type": "Microsoft.DataFactory/factories/triggers",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"runtimeState": "Started",
+				"pipelines": [
+					{
+						"pipelineReference": {
+							"referenceName": "Copy list of patients from gait to lake",
+							"type": "PipelineReference"
+						},
+						"parameters": {}
+					}
+				],
+				"type": "ScheduleTrigger",
+				"typeProperties": {
+					"recurrence": {
+						"frequency": "Day",
+						"interval": 1,
+						"startTime": "2021-05-18T16:27:00Z",
+						"timeZone": "UTC",
+						"schedule": {
+							"minutes": [
+								0
+							],
+							"hours": [
+								3
+							]
+						}
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/Copy list of patients from gait to lake')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/daily_trigger_telemetry_copy')]",
+			"type": "Microsoft.DataFactory/factories/triggers",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"runtimeState": "Started",
+				"pipelines": [
+					{
+						"pipelineReference": {
+							"referenceName": "Copy list of patients from telemetry to lake",
+							"type": "PipelineReference"
+						},
+						"parameters": {}
+					}
+				],
+				"type": "ScheduleTrigger",
+				"typeProperties": {
+					"recurrence": {
+						"frequency": "Day",
+						"interval": 1,
+						"startTime": "2021-06-02T08:00:00Z",
+						"timeZone": "UTC",
+						"schedule": {
+							"minutes": [
+								0
+							],
+							"hours": [
+								7
+							]
+						}
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/Copy list of patients from telemetry to lake')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/hourly_trigger')]",
+			"type": "Microsoft.DataFactory/factories/triggers",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"runtimeState": "Stopped",
+				"pipelines": [],
+				"type": "ScheduleTrigger",
+				"typeProperties": {
+					"recurrence": {
+						"frequency": "Hour",
+						"interval": 1,
+						"startTime": "2021-05-12T13:00:00Z",
+						"timeZone": "UTC"
+					}
+				}
+			},
+			"dependsOn": []
+		}
+	]
+}
