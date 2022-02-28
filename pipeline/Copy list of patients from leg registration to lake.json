@@ -61,7 +61,7 @@
 							},
 							"userProperties": [],
 							"typeProperties": {
-								"functionName": "orchestrators/CopyPatientRawPipelineToDataLake_orchestrator",
+								"functionName": "orchestrators/CopyPatientLegRegtoDataLake_orchestrator",
 								"method": "POST",
 								"body": {
 									"value": "@item()",
