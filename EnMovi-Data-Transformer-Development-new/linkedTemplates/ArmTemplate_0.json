@@ -545,6 +545,117 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/Copy single patient leg registration data to lake_copy1')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Wait until finish",
+						"type": "WebActivity",
+						"dependsOn": [
+							{
+								"activity": "Wait a few seconds",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"url": {
+								"value": "@activity('Leg reg data to lake').output.statusQueryGetUri\n",
+								"type": "Expression"
+							},
+							"method": "GET",
+							"headers": {}
+						}
+					},
+					{
+						"name": "Set target PatientId",
+						"description": "962125eb-25e4-45e6-87c0-08d9b65045b8",
+						"type": "SetVariable",
+						"dependsOn": [],
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "PatientId",
+							"value": "{\"PatientId\": \"962125eb-25e4-45e6-87c0-08d9b65045b8\"}"
+						}
+					},
+					{
+						"name": "Wait a few seconds",
+						"type": "Wait",
+						"dependsOn": [
+							{
+								"activity": "Leg reg data to lake",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"waitTimeInSeconds": 5
+						}
+					},
+					{
+						"name": "Leg reg data to lake",
+						"type": "AzureFunctionActivity",
+						"dependsOn": [
+							{
+								"activity": "Set target PatientId",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 10,
+							"retryIntervalInSeconds": 60,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"functionName": "orchestrators/CopyPatientLegRegtoDataLake_orchestrator",
+							"method": "POST",
+							"headers": {},
+							"body": {
+								"value": "@variables('PatientId')",
+								"type": "Expression"
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "Data_Factory_Azure_Functions",
+							"type": "LinkedServiceReference"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"variables": {
+					"PatientId": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2021-05-18T17:24:26Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/Data_Factory_Azure_Functions')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/Copy list of patients from OIQ to lake')]",
 			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
